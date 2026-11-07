@@ -1,0 +1,7 @@
+.venv/
+.env
+node_modules/
+dist/
+.aws-sam/
+*.zip
+backend/venv/
