@@ -8,3 +8,7 @@ dist/
 .aws-sam/
 *.zip
 backend/venv/
+.coverage
+htmlcov/
+.pytest_cache/
+body.json
