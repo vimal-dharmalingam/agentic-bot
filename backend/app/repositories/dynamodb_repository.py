@@ -54,6 +54,7 @@ class DynamoSessionRepository(SessionRepository):
             raise RepositoryError(f"Failed to load history: {exc}") from exc
 
         items = reversed(response.get("Items", []))    # back to oldest first
+        return [Message(role=item["role"], content=item["content"]) for item in items]
 
     def _next_ts(self) -> int:
         """Strictly increasing timestamp, even if the OS clock is coarse."""
