@@ -21,17 +21,19 @@ class DynamoSessionRepository(SessionRepository):
         ttl_days: int = 30,
         endpoint_url: str | None = None,
         table=None,
+        
     ):
         self._ttl_seconds = ttl_days * SECONDS_PER_DAY
         if table is None:
             dynamodb = boto3.resource("dynamodb", region_name=region, endpoint_url=endpoint_url)
             table = dynamodb.Table(table_name)
         self._table = table
+        self._last_ts = 0
 
     def save_message(self, session_id: str, message: Message) -> None:
         item = {
             "session_id": session_id,
-            "ts": time.time_ns(),                       # unique + sortable
+            "ts": self._next_ts(),                       # unique + sortable
             "role": message.role,
             "content": message.content,
             "expires_at": int(time.time()) + self._ttl_seconds,   # TTL in epoch seconds
@@ -52,4 +54,9 @@ class DynamoSessionRepository(SessionRepository):
             raise RepositoryError(f"Failed to load history: {exc}") from exc
 
         items = reversed(response.get("Items", []))    # back to oldest first
-        return [Message(role=item["role"], content=item["content"]) for item in items]
+
+    def _next_ts(self) -> int:
+        """Strictly increasing timestamp, even if the OS clock is coarse."""
+        ts = max(time.time_ns(), self._last_ts + 1)
+        self._last_ts = ts
+        return ts
